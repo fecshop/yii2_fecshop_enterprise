@@ -21,9 +21,26 @@ return [
             // 公用层的具体配置下载下面
             'config' => [
                 'services' => [
-                    //'email' => [
-                    //    'class' => 'fecshop\queue\services\Email',
-                    //],
+                    'cms' => [
+                       // 子服务
+                        'childService' => [
+                            'article' => [
+                                //'class'            => 'fecshop\enterprise\services\cms\Article',
+                                'storagePath' => 'fecshop\enterprise\services\cms\article',
+                                'storage' => 'ArticleApi', // ArticleMysqldb or ArticleMongodb.
+                            ],
+
+                            //'staticblock' => [
+                            //    'class'    => 'fecshop\services\cms\StaticBlock',
+                            //    'storage'    => 'StaticBlockMongodb', // mysqldb or mongodb.
+                            //],
+                        ],
+                    ],
+                    'goApi' => [
+                        'class'     => 'fecshop\enterprise\services\GoApi',
+                        'token'     => '4Dr4%i2mX&BP^7lFTd%0!1IX2^zx26F8',
+                        'apiHost'   => '120.24.37.249:3000',
+                    ]
                 ],
             ],
         ],

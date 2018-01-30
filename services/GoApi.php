@@ -20,8 +20,8 @@ use fecshop\services\Service;
  */
 class GoApi extends Service
 {
-    public $token = '4Dr4%i2mX&BP^7lFTd%0!1IX2^zx26F8';
-    public $apiHost = '120.24.37.249:3000';
+    public $token ;
+    public $apiHost ;
     # 1.通过函数访问api，获取数据
 	#  JSON格式
 	/*

@@ -126,7 +126,7 @@ class ArticleApi extends Service implements ArticleInterface
         }
         return [
             'coll' => $coll,
-            'count'=> $$data['count'],
+            'count'=> $data['count'],
         ];
         
         
@@ -156,56 +156,42 @@ class ArticleApi extends Service implements ArticleInterface
      */
     public function save($one, $originUrlKey)
     {
-        $currentDateTime = \fec\helpers\CDate::getCurrentDateTime();
-        $primaryVal = isset($one[$this->getPrimaryKey()]) ? $one[$this->getPrimaryKey()] : '';
-        if ($primaryVal) {
-            $model = $this->_articleModel->findOne($primaryVal);
-            if (!$model) {
-                Yii::$service->helper->errors->add('article '.$this->getPrimaryKey().' is not exist');
-
-                return;
-            }
-        } else {
-            $model = new $this->_articleModelName();
-            $model->created_at = time();
-            $model->created_user_id = \fec\helpers\CUser::getCurrentUserId();
-        }
-        $model->updated_at = time();
+        $primaryKey = $this->getPrimaryKey();
+        //var_dump($one);
+        $apiKey = '/v1/cms/articles/save';
         foreach ($this->_lang_attr as $attrName) {
             if (is_array($one[$attrName]) && !empty($one[$attrName])) {
                 $one[$attrName] = serialize($one[$attrName]);
             }
         }
-        $primaryKey = $this->getPrimaryKey();
-        $model      = Yii::$service->helper->ar->save($model, $one);
-        $primaryVal = $model[$primaryKey];
-
-        $originUrl = $originUrlKey.'?'.$this->getPrimaryKey() .'='. $primaryVal;
+        $one['status'] ||  $one['status'] = 1;
+        $one['created_user_id'] = \fec\helpers\CUser::getCurrentUserId();
+        $data = Yii::$service->goApi->getCurlJsonDeData($apiKey, 'post', $one);
+        
+        $saveOne = $data['one'] ;
+        $lastId  = $data['lastid'];
+        $affect  = $data['affect'];
+        $primaryVal = $lastId ? $lastId : $one[$primaryKey];
+        $originUrl = $originUrlKey.'?'.$primaryKey .'='. $primaryVal;
+            
         $originUrlKey = isset($one['url_key']) ? $one['url_key'] : '';
         $defaultLangTitle = Yii::$service->fecshoplang->getDefaultLangAttrVal($one['title'], 'title');
         $urlKey = Yii::$service->url->saveRewriteUrlKeyByStr($defaultLangTitle, $originUrl, $originUrlKey);
-        $model->url_key = $urlKey;
-        $this->initStatus($model);
-        $model->save();
-        // 保存的数据格式返回
-        $model['content'] = unserialize($model['content']);
-        $model['title'] = unserialize($model['title']);
-        $model['meta_keywords'] = unserialize($model['meta_keywords']);
-        $model['meta_description'] = unserialize($model['meta_description']);
-        return $model->attributes;
+        $apiKey = '/cms/articles/updateUrlKeyInfo';
+        $one = [
+            'url_key'    => $urlKey,
+            $primaryKey  => $primaryVal 
+        ];
+        $data = Yii::$service->goApi->getCurlJsonDeData($apiKey, 'post', $one);
+        
+        $saveOne['content'] = unserialize($saveOne['content']);
+        $saveOne['title'] = unserialize($saveOne['title']);
+        $saveOne['meta_keywords'] = unserialize($saveOne['meta_keywords']);
+        $saveOne['meta_description'] = unserialize($saveOne['meta_description']);
+        return saveOne; 
+    
     }
     
-    protected function initStatus($model){
-        $statusArr = [$model::STATUS_ACTIVE, $model::STATUS_DELETED];
-        if ($model['status']) {
-            $model['status'] = (int) $model['status'];
-            if (!in_array($model['status'], $statusArr)) {
-                $model['status'] = $model::STATUS_ACTIVE;
-            }
-        } else {
-            $model['status'] = $model::STATUS_ACTIVE;
-        }
-    }
 
     public function remove($ids)
     {
